@@ -1,0 +1,75 @@
+web:
+  build: .
+  environment:
+    - PORT=8080
+    - LOG_LEVEL=info
+    - NODE_ENV=dev
+    - ENV_NAME=local
+    - STATSD_ENABLED=false
+    - STATSD_HOST=datadog
+    - STATSD_PORT=8125
+    - MAIL_GUN_HOST=api.mailgun.net
+    - MAIL_GUN_PATH_ACTIVISM=v3/aslive.activistmonitor.com/messages
+    - MAIL_GUN_PATH_DEBTWIRE=v3/aslive.debtwire.com/messages
+    - MAIL_GUN_API_KEY=api:key-03158935a3f48695c032ba9f922d7470
+
+  ports:
+    - "8080:8080"
+  volumes:
+  - ./server:/usr/src/app/server
+  - ./test:/usr/src/app/test
+  - ./package.json:/usr/src/app/package.json
+  links:
+    - rabbitmq
+    # - datadog
+    - failgun
+    - mongodb
+  command: npm start
+
+rabbitmq:
+  image: rabbitmq:3-management
+  expose:
+    - "5672"
+    - "15672"
+  environment:
+    - "RABBITMQ_DEFAULT_USER=guest"
+    - "RABBITMQ_DEFAULT_PASS=guest"
+
+# datadog:
+#   image: datadog/docker-dd-agent
+#   environment:
+#      - API_KEY=133518e1bca20afe0eacd183449b386a
+#   volumes:
+#     - /var/run/docker.sock:/var/run/docker.sock
+#     - /proc:/host/proc:ro
+#     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+#     - ./container-config/datadog/conf.d:/etc/dd-agent/conf.d
+#   expose:
+#     - "8125/udp"
+#   links:
+#     - rabbitmq
+
+failgun:
+  image: quii/mockingjay-server:1.5.5
+  volumes:
+    - ./server/test/integration/fakes:/fakes
+  command: -config=/fakes/mailgun-api.yaml
+  expose:
+   - "9090"
+
+acceptance_test:
+  build: acceptance
+  working_dir: /acceptance
+  links:
+    - web
+  volumes:
+    - ./acceptance:/acceptance
+  command: bash acceptance-test.sh -u ${BASE_URL}
+  # command: ls
+
+mongodb:
+  image: mongo
+  expose:
+    - "27017"
+
+  command: "--smallfiles"
