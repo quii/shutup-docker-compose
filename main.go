@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"strings"
-	"os"
 	"log"
+	"os"
+	"strings"
 )
 
 func convert(in io.Reader, out io.Writer) {
@@ -19,7 +19,7 @@ func convert(in io.Reader, out io.Writer) {
 			newLine = "  expose:"
 			foundPorts = true
 		} else if foundPorts && strings.Contains(scanner.Text(), "-") {
-			newLine = strings.Split(scanner.Text(), ":")[0]+`"`
+			newLine = strings.Split(scanner.Text(), ":")[0] + `"`
 		} else {
 			foundPorts = false
 			newLine = scanner.Text()
@@ -29,12 +29,11 @@ func convert(in io.Reader, out io.Writer) {
 
 }
 
-func main(){
+func main() {
 	config, err := os.Open(os.Args[1])
 
-
-	if err != nil{
-		log.Fatal("Please supply a file path i can open as the first argument")
+	if err != nil {
+		log.Fatal("Please supply a file path i can open as the first argument", err)
 	}
 
 	convert(config, os.Stdout)
